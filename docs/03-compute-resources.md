@@ -119,12 +119,12 @@ kubernetes       eastus2   Static        XX.XXX.XXX.XXX
 
 ## Virtual Machines
 
-The compute instances in this lab will be provisioned using [Ubuntu Server](https://www.ubuntu.com/server) 18.04, which has good support for the [cri-containerd container runtime](https://github.com/kubernetes-incubator/cri-containerd). Each compute instance will be provisioned with a fixed private IP address to simplify the Kubernetes bootstrapping process.
+The compute instances in this lab will be provisioned using [Ubuntu Server](https://www.ubuntu.com/server) 22.04, which has good support for the [cri-containerd container runtime](https://github.com/kubernetes-incubator/cri-containerd). Each compute instance will be provisioned with a fixed private IP address to simplify the Kubernetes bootstrapping process.
 
 To select latest stable Ubuntu Server release available on Azure, set UBUNTULTS variable below.
 
 ```shell
-UBUNTULTS="Canonical:UbuntuServer:18.04-LTS:latest"
+UBUNTULTS="Canonical:0001-com-ubuntu-server-jammy:22_04-lts-gen2:latest"
 ```
 
 ### Kubernetes Controllers
@@ -136,7 +136,7 @@ az vm availability-set create -g kubernetes -n controller-as
 ```
 
 ```shell
-for i in 0 1 2; do
+for i in 0 1; do
     echo "[Controller ${i}] Creating public IP..."
     az network public-ip create --sku Standard -z 1 -n controller-${i}-pip -g kubernetes > /dev/null
 
