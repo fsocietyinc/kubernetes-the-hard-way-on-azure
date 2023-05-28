@@ -1,18 +1,18 @@
 # Bootstrapping the Kubernetes Worker Nodes
 
-In this lab you will bootstrap two Kubernetes worker nodes. The following components will be installed on each node: [runc](https://github.com/opencontainers/runc), [container networking plugins](https://github.com/containernetworking/cni), [cri-containerd](https://github.com/containerd/cri), [kubelet](https://kubernetes.io/docs/reference/command-line-tools-reference/kubelet/), and [kube-proxy](https://kubernetes.io/docs/concepts/cluster-administration/proxies/).
+In this lab you will bootstrap two Kubernetes worker nodes. The following components will be installed on both node: [runc](https://github.com/opencontainers/runc), [container networking plugins](https://github.com/containernetworking/cni), [cri-containerd](https://github.com/containerd/cri), [kubelet](https://kubernetes.io/docs/reference/command-line-tools-reference/kubelet/), and [kube-proxy](https://kubernetes.io/docs/concepts/cluster-administration/proxies/).
 
 ## Prerequisites
 
-The commands in this lab must be run on each worker instance: `worker-0` and `worker-1`.
-Azure Instance Metadata Service cannot be used to set custom property. We have used *tags* on each worker VM to defined POD-CIDR used later.
+The commands in this lab must be run on both worker instance: `worker-0` and `worker-1`.
+Azure Instance Metadata Service cannot be used to set custom property. We have used *tags* on both worker VM to defined POD-CIDR used later.
 
 Login to each worker instance using the `az` command to find its public IP and ssh to it. Example:
 
 ```shell
 WORKER="worker-0"
 PUBLIC_IP_ADDRESS=$(az network public-ip show -g kubernetes \
-  -n ${WORKER}-pip --query "ipAddress" -otsv)
+  -n ${WORKER}-pip --query "ipAddress" -otsv | tr -d '\r')
 
 ssh kuberoot@${PUBLIC_IP_ADDRESS}
 ```
@@ -38,14 +38,14 @@ Install the OS dependencies:
 
 ```shell
 wget -q --show-progress --https-only --timestamping \
-  https://github.com/kubernetes-sigs/cri-tools/releases/download/v1.26.1/crictl-v1.26.1-linux-amd64.tar.gz \
+  https://github.com/kubernetes-sigs/cri-tools/releases/download/v1.27.0/crictl-v1.27.0-linux-amd64.tar.gz \
   https://storage.googleapis.com/gvisor/releases/nightly/latest/runsc \
-  https://github.com/opencontainers/runc/releases/download/v1.1.5/runc.amd64 \
-  https://github.com/containernetworking/plugins/releases/download/v1.2.0/cni-plugins-linux-amd64-v1.2.0.tgz \
-  https://github.com/containerd/containerd/releases/download/v1.7.0/containerd-1.7.0-linux-amd64.tar.gz \
-  https://storage.googleapis.com/kubernetes-release/release/v1.26.3/bin/linux/amd64/kubectl \
-  https://storage.googleapis.com/kubernetes-release/release/v1.26.3/bin/linux/amd64/kube-proxy \
-  https://storage.googleapis.com/kubernetes-release/release/v1.26.3/bin/linux/amd64/kubelet
+  https://github.com/opencontainers/runc/releases/download/v1.1.7/runc.amd64 \
+  https://github.com/containernetworking/plugins/releases/download/v1.3.0/cni-plugins-linux-amd64-v1.3.0.tgz \
+  https://github.com/containerd/containerd/releases/download/v1.7.1/containerd-1.7.1-linux-amd64.tar.gz \
+  https://storage.googleapis.com/kubernetes-release/release/v1.27.1/bin/linux/amd64/kubectl \
+  https://storage.googleapis.com/kubernetes-release/release/v1.27.1/bin/linux/amd64/kube-proxy \
+  https://storage.googleapis.com/kubernetes-release/release/v1.27.1/bin/linux/amd64/kubelet
 ```
 
 Create the installation directories:
@@ -68,9 +68,9 @@ Install the worker binaries:
   sudo mv runc.amd64 runc
   chmod +x kubectl kube-proxy kubelet runc runsc
   sudo mv kubectl kube-proxy kubelet runc runsc /usr/local/bin/
-  sudo tar -xvf crictl-v1.26.1-linux-amd64.tar.gz -C /usr/local/bin/
-  sudo tar -xvf cni-plugins-linux-amd64-v1.2.0.tgz -C /opt/cni/bin/
-  sudo tar -xvf containerd-1.7.0-linux-amd64.tar.gz -C containerd
+  sudo tar -xvf crictl-v1.27.0-linux-amd64.tar.gz -C /usr/local/bin/
+  sudo tar -xvf cni-plugins-linux-amd64-v1.3.0.tgz -C /opt/cni/bin/
+  sudo tar -xvf containerd-1.7.1-linux-amd64.tar.gz -C containerd
   sudo mv containerd/bin/* /bin/
 }
 ```
@@ -83,9 +83,10 @@ Create the `bridge` network configuration file replacing POD_CIDR with address r
 
 ```shell
 POD_CIDR="$(echo $(curl --silent -H Metadata:true "http://169.254.169.254/metadata/instance/compute/tags?api-version=2017-08-01&format=text" | sed 's/\;/\n/g' | grep pod-cidr) | cut -d : -f2)"
+
 cat <<EOF | sudo tee /etc/cni/net.d/10-bridge.conf
 {
-    "cniVersion": "0.4.0",
+    "cniVersion": "1.0.0"",
     "name": "bridge",
     "type": "bridge",
     "bridge": "cnio0",
@@ -107,7 +108,7 @@ Create the `loopback` network configuration file:
 ```shell
 cat <<EOF | sudo tee /etc/cni/net.d/99-loopback.conf
 {
-    "cniVersion": "0.4.0",
+    "cniVersion": "1.0.0",
     "name": "lo",
     "type": "loopback"
 }
@@ -188,7 +189,7 @@ Create the `kubelet-config.yaml` configuration file:
 ```shell
 cat <<EOF | sudo tee /var/lib/kubelet/kubelet-config.yaml
 kind: KubeletConfiguration
-apiVersion: kubelet.config.k8s.io/v1beta1
+apiVersion: kubelet.config.k8s.io/v1
 authentication:
   anonymous:
     enabled: false
@@ -285,7 +286,7 @@ EOF
 }
 ```
 
-> Remember to run the above commands on each worker node: `worker-0` and `worker-1`.
+> Remember to run the above commands on both worker node: `worker-0` and `worker-1`.
 
 ## Verification
 
@@ -294,7 +295,7 @@ Login to one of the controller nodes:
 ```shell
 CONTROLLER="controller-0"
 PUBLIC_IP_ADDRESS=$(az network public-ip show -g kubernetes \
-  -n ${CONTROLLER}-pip --query "ipAddress" -otsv)
+  -n ${CONTROLLER}-pip --query "ipAddress" -otsv | tr -d '\r')
 
 ssh kuberoot@${PUBLIC_IP_ADDRESS}
 ```

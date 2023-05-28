@@ -18,7 +18,7 @@ Print a hexdump of the `kubernetes-the-hard-way` secret stored in etcd:
 ```shell
 CONTROLLER="controller-0"
 PUBLIC_IP_ADDRESS=$(az network public-ip show -g kubernetes \
-  -n ${CONTROLLER}-pip --query "ipAddress" -otsv)
+  -n ${CONTROLLER}-pip --query "ipAddress" -otsv | tr -d '\r')
 
 ssh kuberoot@${PUBLIC_IP_ADDRESS} \
   "sudo ETCDCTL_API=3 etcdctl get \
@@ -205,7 +205,7 @@ Retrieve the external IP address of a worker instance:
 
 ```shell
 EXTERNAL_IP=$(az network public-ip show -g kubernetes \
-  -n worker-0-pip --query "ipAddress" -otsv)
+  -n worker-0-pip --query "ipAddress" -otsv | tr -d '\r')
 ```
 
 Make an HTTP request using the external IP address and the `nginx` node port:
