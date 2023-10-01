@@ -14,7 +14,7 @@ Retrieve the `kubernetes-the-hard-way` static IP address:
 
 ```shell
 KUBERNETES_PUBLIC_ADDRESS=$(az network public-ip show -g kubernetes \
-  -n kubernetes-pip --query ipAddress -otsv)
+  -n kubernetes-pip --query ipAddress -otsv | tr -d '\r')
 ```
 
 Generate a kubeconfig file suitable for authenticating as the `admin` user:
@@ -58,7 +58,6 @@ controller-manager   Healthy   ok
 scheduler            Healthy   ok
 etcd-0               Healthy   {"health": "true"}
 etcd-1               Healthy   {"health": "true"}
-etcd-2               Healthy   {"health": "true"}
 ```
 
 List the nodes in the remote Kubernetes cluster:

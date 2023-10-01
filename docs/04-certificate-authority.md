@@ -38,11 +38,11 @@ cat > ca-csr.json <<EOF
   },
   "names": [
     {
-      "C": "IT",
-      "L": "Milan",
+      "C": "IN",
+      "L": "Pune",
       "O": "Kubernetes",
-      "OU": "MI",
-      "ST": "Italy"
+      "OU": "AZ",
+      "ST": "India"
     }
   ]
 }
@@ -80,11 +80,11 @@ cat > admin-csr.json <<EOF
   },
   "names": [
     {
-      "C": "IT",
-      "L": "Milan",
+      "C": "IN",
+      "L": "Pune",
       "O": "system:masters",
       "OU": "Kubernetes The Hard Way",
-      "ST": "Italy"
+      "ST": "India"
     }
   ]
 }
@@ -113,7 +113,7 @@ _Note:_ If you run previous command in Windows, surround values with `"`. for ex
 
 ### The Kubelet Client Certificates
 
-Kubernetes uses a [special-purpose authorization mode](https://kubernetes.io/docs/admin/authorization/node/) called Node Authorizer, that specifically authorizes API requests made by [Kubelets](https://kubernetes.io/docs/concepts/overview/components/#kubelet). In order to be authorized by the Node Authorizer, Kubelets must use a credential that identifies them as being in the `system:nodes` group, with a username of `system:node:<nodeName>`. In this section you will create a certificate for each Kubernetes worker node that meets the Node Authorizer requirements.
+Kubernetes uses a [special-purpose authorization mode](https://kubernetes.io/docs/reference/access-authn-authz/node/) called Node Authorizer, that specifically authorizes API requests made by [Kubelets](https://kubernetes.io/docs/concepts/overview/components/#kubelet). In order to be authorized by the Node Authorizer, Kubelets must use a credential that identifies them as being in the `system:nodes` group, with a username of `system:node:<nodeName>`. In this section you will create a certificate for each Kubernetes worker node that meets the Node Authorizer requirements.
 
 Generate a certificate and private key for each Kubernetes worker node:
 
@@ -128,11 +128,11 @@ cat > ${instance}-csr.json <<EOF
   },
   "names": [
     {
-      "C": "IT",
-      "L": "Milan",
+      "C": "IN",
+      "L": "Pune",
       "O": "system:nodes",
       "OU": "Kubernetes The Hard Way",
-      "ST": "Italy"
+      "ST": "India"
     }
   ]
 }
@@ -164,7 +164,7 @@ worker-1.pem
 
 ### The Controller Manager Client Certificate
 
-Generate the `kube-controller-manager` client certificate and private key:
+Create the `kube-controller-manager` client certificate signing request and generate the `kube-controller-manager` client certificate and private key:
 
 ```shell
 {
@@ -178,11 +178,11 @@ cat > kube-controller-manager-csr.json <<EOF
   },
   "names": [
     {
-      "C": "IT",
-      "L": "Milan",
+      "C": "IN",
+      "L": "Pune",
       "O": "system:kube-controller-manager",
       "OU": "Kubernetes The Hard Way",
-      "ST": "Italy"
+      "ST": "India"
     }
   ]
 }
@@ -207,7 +207,7 @@ kube-controller-manager.pem
 
 ### The Kube Proxy Client Certificate
 
-Create the `kube-proxy` client certificate signing request:
+Create the `kube-proxy` client certificate signing request and generate the `kube-proxy` client certificate and private key:
 
 ```shell
 cat > kube-proxy-csr.json <<EOF
@@ -219,20 +219,16 @@ cat > kube-proxy-csr.json <<EOF
   },
   "names": [
     {
-      "C": "IT",
-      "L": "Milano",
+      "C": "IN",
+      "L": "Pune",
       "O": "system:node-proxier",
       "OU": "Kubernetes The Hard Way",
-      "ST": "Italy"
+      "ST": "India"
     }
   ]
 }
 EOF
-```
 
-Generate the `kube-proxy` client certificate and private key:
-
-```shell
 cfssl gencert \
   -ca=ca.pem \
   -ca-key=ca-key.pem \
@@ -264,11 +260,11 @@ cat > kube-scheduler-csr.json <<EOF
   },
   "names": [
     {
-      "C": "IT",
-      "L": "Milan",
+      "C": "IN",
+      "L": "Pune",
       "O": "system:kube-scheduler",
       "OU": "Kubernetes The Hard Way",
-      "ST": "Italy"
+      "ST": "India"
     }
   ]
 }
@@ -302,7 +298,7 @@ KUBERNETES_PUBLIC_ADDRESS=$(az network public-ip show -g kubernetes \
   -n kubernetes-pip --query "ipAddress" -o tsv)
 ```
 
-Create the Kubernetes API Server certificate signing request:
+Create the Kubernetes API Server certificate signing request and generate the Kubernetes API Server certificate and private key:
 
 ```shell
 cat > kubernetes-csr.json <<EOF
@@ -314,27 +310,23 @@ cat > kubernetes-csr.json <<EOF
   },
   "names": [
     {
-      "C": "IT",
-      "L": "Milan",
+      "C": "IN",
+      "L": "Pune",
       "O": "Kubernetes",
       "OU": "Kubernetes The Hard Way",
-      "ST": "Italy"
+      "ST": "India"
     }
   ]
 }
 EOF
-```
 
-Generate the Kubernetes API Server certificate and private key:
-
-```shell
 KUBERNETES_HOSTNAMES=kubernetes,kubernetes.default,kubernetes.default.svc,kubernetes.default.svc.cluster,kubernetes.svc.cluster.local
 
 cfssl gencert \
   -ca=ca.pem \
   -ca-key=ca-key.pem \
   -config=ca-config.json \
-  -hostname=10.32.0.1,10.240.0.10,10.240.0.11,10.240.0.12,${KUBERNETES_PUBLIC_ADDRESS},127.0.0.1,${KUBERNETES_HOSTNAMES} \
+  -hostname=10.32.0.1,10.240.0.10,10.240.0.11,${KUBERNETES_PUBLIC_ADDRESS},127.0.0.1,${KUBERNETES_HOSTNAMES} \
   -profile=kubernetes \
   kubernetes-csr.json | cfssljson -bare kubernetes
 ```
@@ -364,11 +356,11 @@ cat > service-account-csr.json <<EOF
   },
   "names": [
     {
-      "C": "IT",
-      "L": "Milan",
+      "C": "IN",
+      "L": "Pune",
       "O": "Kubernetes",
       "OU": "Kubernetes The Hard Way",
-      "ST": "Italy"
+      "ST": "India"
     }
   ]
 }
@@ -392,14 +384,15 @@ service-account.pem
 ```
 
 ## Distribute the Client and Server Certificates
-## If you're following the previous steps the username used to create the linux VM would be kuberoot 
+
+## If you're following the previous steps the username used to create the linux VM would be kuberoot
 
 Copy the appropriate certificates and private keys to each worker instance:
 
 ```shell
 for instance in worker-0 worker-1; do
   PUBLIC_IP_ADDRESS=$(az network public-ip show -g kubernetes \
-    -n ${instance}-pip --query "ipAddress" -o tsv)
+    -n ${instance}-pip --query "ipAddress" -o tsv | tr -d '\r')
 
   scp -o StrictHostKeyChecking=no ca.pem ${instance}-key.pem ${instance}.pem kuberoot@${PUBLIC_IP_ADDRESS}:~/
 done
@@ -410,7 +403,7 @@ Copy the appropriate certificates and private keys to each controller instance:
 ```shell
 for instance in controller-0 controller-1 controller-2; do
   PUBLIC_IP_ADDRESS=$(az network public-ip show -g kubernetes \
-    -n ${instance}-pip --query "ipAddress" -o tsv)
+    -n ${instance}-pip --query "ipAddress" -o tsv | tr -d '\r')
 
   scp -o StrictHostKeyChecking=no ca.pem ca-key.pem kubernetes-key.pem kubernetes.pem \
     service-account-key.pem service-account.pem kuberoot@${PUBLIC_IP_ADDRESS}:~/

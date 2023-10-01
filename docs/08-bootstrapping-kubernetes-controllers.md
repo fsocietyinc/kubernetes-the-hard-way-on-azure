@@ -1,15 +1,15 @@
 # Bootstrapping the Kubernetes Control Plane
 
-In this lab you will bootstrap the Kubernetes control plane across two compute instances and configure it for high availability. You will also create an external load balancer that exposes the Kubernetes API Servers to remote clients. The following components will be installed on each node: Kubernetes API Server, Scheduler, and Controller Manager.
+In this lab you will bootstrap the Kubernetes control plane across two compute instances and configure it for high availability. You will also create an external load balancer that exposes the Kubernetes API Servers to remote clients. The following components will be installed on both node: Kubernetes API Server, Scheduler, and Controller Manager.
 
 ## Prerequisites
 
-The commands in this lab must be run on each controller instance: `controller-0`, `controller-1` and `controller-2`. Login to each controller instance using the `az` command to find its public IP and ssh to it. Example:
+The commands in this lab must be run on both controller instance: `controller-0` and `controller-1`. Login to each controller instance using the `az` command to find its public IP and ssh to it. Example:
 
 ```shell
 CONTROLLER="controller-0"
 PUBLIC_IP_ADDRESS=$(az network public-ip show -g kubernetes \
-  -n ${CONTROLLER}-pip --query "ipAddress" -otsv)
+  -n ${CONTROLLER}-pip --query "ipAddress" -otsv | tr -d '\r')
 
 ssh kuberoot@${PUBLIC_IP_ADDRESS}
 ```
@@ -32,10 +32,10 @@ Download the official Kubernetes release binaries:
 
 ```shell
 wget -q --show-progress --https-only --timestamping \
-  "https://storage.googleapis.com/kubernetes-release/release/v1.26.3/bin/linux/amd64/kube-apiserver" \
-  "https://storage.googleapis.com/kubernetes-release/release/v1.26.3/bin/linux/amd64/kube-controller-manager" \
-  "https://storage.googleapis.com/kubernetes-release/release/v1.26.3/bin/linux/amd64/kube-scheduler" \
-  "https://storage.googleapis.com/kubernetes-release/release/v1.26.3/bin/linux/amd64/kubectl"
+  "https://storage.googleapis.com/kubernetes-release/release/v1.27.1/bin/linux/amd64/kube-apiserver" \
+  "https://storage.googleapis.com/kubernetes-release/release/v1.27.1/bin/linux/amd64/kube-controller-manager" \
+  "https://storage.googleapis.com/kubernetes-release/release/v1.27.1/bin/linux/amd64/kube-scheduler" \
+  "https://storage.googleapis.com/kubernetes-release/release/v1.27.1/bin/linux/amd64/kubectl"
 ```
 
 Install the Kubernetes binaries:
@@ -88,7 +88,7 @@ ExecStart=/usr/local/bin/kube-apiserver \\
   --etcd-cafile=/var/lib/kubernetes/ca.pem \\
   --etcd-certfile=/var/lib/kubernetes/kubernetes.pem \\
   --etcd-keyfile=/var/lib/kubernetes/kubernetes-key.pem \\
-  --etcd-servers=https://10.240.0.10:2379,https://10.240.0.11:2379,https://10.240.0.12:2379 \\
+  --etcd-servers=https://10.240.0.10:2379,https://10.240.0.11:2379\\
   --event-ttl=1h \\
   --encryption-provider-config=/var/lib/kubernetes/encryption-config.yaml \\
   --kubelet-certificate-authority=/var/lib/kubernetes/ca.pem \\
@@ -161,7 +161,7 @@ Create the `kube-scheduler.yaml` configuration file:
 
 ```shell
 cat <<EOF | sudo tee /etc/kubernetes/config/kube-scheduler.yaml
-apiVersion: kubescheduler.config.k8s.io/v1beta3
+apiVersion: kubescheduler.config.k8s.io/v1
 kind: KubeSchedulerConfiguration
 clientConnection:
   kubeconfig: "/var/lib/kubernetes/kube-scheduler.kubeconfig"
@@ -209,26 +209,25 @@ kubectl get componentstatuses --kubeconfig admin.kubeconfig
 ```
 
 ```shell
-NAME                 STATUS    MESSAGE             ERROR
+NAME                 STATUS    MESSAGE                         ERROR
 scheduler            Healthy   ok
 controller-manager   Healthy   ok
-etcd-0               Healthy   {"health":"true"}
-etcd-1               Healthy   {"health":"true"}
-etcd-2               Healthy   {"health":"true"}
+etcd-0               Healthy   {"health":"true","reason":""}
+etcd-1               Healthy   {"health":"true","reason":""}
 ```
 
-> Remember to run the above commands on each controller node: `controller-0`, `controller-1` and `controller-2`.
+> Remember to run the above commands on both controller node: `controller-0` and `controller-1`.
 
 ## RBAC for Kubelet Authorization
 
-In this section you will configure RBAC permissions to allow the Kubernetes API Server to access the Kubelet API on each worker node. Access to the Kubelet API is required for retrieving metrics, logs, and executing commands in pods.
+In this section you will configure RBAC permissions to allow the Kubernetes API Server to access the Kubelet API on both worker node. Access to the Kubelet API is required for retrieving metrics, logs, and executing commands in pods.
 
-> This tutorial sets the Kubelet `--authorization-mode` flag to `Webhook`. Webhook mode uses the [SubjectAccessReview](https://kubernetes.io/docs/admin/authorization/#checking-api-access) API to determine authorization.
+> This tutorial sets the Kubelet `--authorization-mode` flag to `Webhook`. Webhook mode uses the [SubjectAccessReview](https://kubernetes.io/docs/reference/access-authn-authz/webhook/) API to determine authorization.
 
 ```shell
 CONTROLLER="controller-0"
 PUBLIC_IP_ADDRESS=$(az network public-ip show -g kubernetes \
-  -n ${CONTROLLER}-pip --query "ipAddress" -otsv)
+  -n ${CONTROLLER}-pip --query "ipAddress" -otsv | tr -d '\r')
 
 ssh kuberoot@${PUBLIC_IP_ADDRESS}
 ```
@@ -288,6 +287,7 @@ In this section you will provision an external load balancer to front the Kubern
 > The compute instances created in this tutorial will not have permission to complete this section. Run the following commands from the same machine used to create the compute instances.
 
 Create the load balancer health probe as a pre-requesite for the lb rule that follows.
+
 ```shell
 az network lb probe create -g kubernetes \
   --lb-name kubernetes-lb \
@@ -316,7 +316,7 @@ Retrieve the `kubernetes-the-hard-way` static IP address:
 
 ```shell
 KUBERNETES_PUBLIC_IP_ADDRESS=$(az network public-ip show -g kubernetes \
-  -n kubernetes-pip --query ipAddress -otsv)
+  -n kubernetes-pip --query ipAddress -otsv | tr -d '\r')
 ```
 
 Make a HTTP request for the Kubernetes version info:
@@ -330,12 +330,12 @@ curl --cacert ca.pem https://$KUBERNETES_PUBLIC_IP_ADDRESS:6443/version
 ```shell
 {
   "major": "1",
-  "minor": "26",
-  "gitVersion": "v1.26.3",
-  "gitCommit": "9e644106593f3f4aa98f8a84b23db5fa378900bd",
+  "minor": "27",
+  "gitVersion": "v1.27.1",
+  "gitCommit": "4c9411232e10168d7b050c49a1b59f6df9d7ea4b",
   "gitTreeState": "clean",
-  "buildDate": "2023-03-15T13:33:12Z",
-  "goVersion": "go1.19.7",
+  "buildDate": "2023-04-14T13:14:42Z",
+  "goVersion": "go1.20.3",
   "compiler": "gc",
   "platform": "linux/amd64"
 }

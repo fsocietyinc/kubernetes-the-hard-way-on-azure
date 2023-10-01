@@ -37,12 +37,13 @@ sudo mv cfssljson_1.6.3_linux_amd64 /usr/local/bin/cfssljson
 ```
 
 ### Windows
+
 For windows on 64 bit use powershell, using administrative rights
+
 ```shell
 PS C:\Windows\system32>Invoke-WebRequest -Uri https://github.com/cloudflare/cfssl/releases/download/v1.6.3/cfssl_1.6.3_windows_amd64.exe -OutFile cfssl.exe
 PS C:\Windows\system32>Invoke-WebRequest -Uri https://github.com/cloudflare/cfssl/releases/download/v1.4.1/cfssljson_1.6.3_windows_amd64.exe -OutFile cfssljson.exe
 ```
-
 
 ### Verification
 
@@ -97,7 +98,8 @@ sudo mv ./kubectl /usr/local/bin/kubectl
 ```
 
 ### Windows
-Note you need to have chocolately package manager installed first (https://chocolatey.org/)
+
+Note you need to have chocolately package manager installed first (<https://chocolatey.org/>)
 
 ```shell
 PS C:\Windows\system32>choco install kubernetes-cli
@@ -127,10 +129,10 @@ clientVersion:
 kustomizeVersion: v4.5.7
 ```
 
-To quick check kubectl version, you can also use the following command : 
+To quick check kubectl version, you can also use the following command :
 
 ```shell
- kubectl version -oyaml --client|awk '/gitVersion/{print $2;}'
+ kubectl version -oyaml --client | awk '/gitVersion/{print $2;}'
 ```
 
 > output

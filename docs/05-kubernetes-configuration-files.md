@@ -14,7 +14,7 @@ Retrieve the `kubernetes-the-hard-way` static IP address:
 
 ```shell
 KUBERNETES_PUBLIC_ADDRESS=$(az network public-ip show -g kubernetes \
-  -n kubernetes-pip --query "ipAddress" -otsv)
+  -n kubernetes-pip --query "ipAddress" -otsv | tr -d '\r')
 ```
 
 ### The kubelet Kubernetes Configuration File
@@ -196,7 +196,7 @@ Copy the appropriate `kubelet` and `kube-proxy` kubeconfig files to each worker 
 ```shell
 for instance in worker-0 worker-1; do
   PUBLIC_IP_ADDRESS=$(az network public-ip show -g kubernetes \
-    -n ${instance}-pip --query "ipAddress" -otsv)
+    -n ${instance}-pip --query "ipAddress" -otsv | tr -d '\r')
 
   scp ${instance}.kubeconfig kube-proxy.kubeconfig kuberoot@${PUBLIC_IP_ADDRESS}:~/
 done
@@ -205,9 +205,9 @@ done
 Copy the appropriate `kube-controller-manager` and `kube-scheduler` kubeconfig files to each controller instance:
 
 ```shell
-for instance in controller-0 controller-1 controller-2; do
+for instance in controller-0 controller-1; do
   PUBLIC_IP_ADDRESS=$(az network public-ip show -g kubernetes \
-    -n ${instance}-pip --query "ipAddress" -otsv)
+    -n ${instance}-pip --query "ipAddress" -otsv | tr -d '\r')
 
   scp admin.kubeconfig kube-controller-manager.kubeconfig kube-scheduler.kubeconfig kuberoot@${PUBLIC_IP_ADDRESS}:~/
 done
